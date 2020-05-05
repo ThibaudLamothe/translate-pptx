@@ -1,3 +1,4 @@
 selenium
 pyhton-pptx
 clipboard
+logzero
