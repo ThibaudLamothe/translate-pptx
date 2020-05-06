@@ -5,6 +5,7 @@ from pptx import Presentation
 
 from deepL_selenium import seleniumDeepL
 import ppt_interaction as ppt
+from ppt_interaction import TextModification as tm
 
 
 if __name__ == "__main__":
@@ -12,41 +13,32 @@ if __name__ == "__main__":
     file_name = 'test'
     file_source = '../ppts/{}.pptx'.format(file_name)
     file_dest = file_source.replace('.pptx', '_translated.pptx')
+    translation_path = '../translations/translations_tailnet_chinese.json'
     
     
+    # Get information from PowerPoint
+    ppt.browse_file(file_source, text_modif=tm.STORE_TEXT)
+    
+    # Create translation object
+    deepL = seleniumDeepL(driver_path='../chromedriver', loglevel='debug')
+    
+    # (Load,) Run (& Store) Translations
+    try:
+        deepL.run_translation(corpus=ppt.CORPUS, batch_value=50, destination_language='zh', load_and_store_at=translation_path, time_between_translation_iteration=12, quit_web=False,)
+    except:
+        deepL.close_driver()
+        deepL.save_translations(translation_path.replace('.json', '_error.json'))
+        raise
+    
+    # Close connection
+    deepL.close_driver()
 
-    if False:
-        # Display file content
-        corpus = ppt.read_ppt_file(file_source)
-        
-    if False:
-        ppt.CORPUS = ['__CORPUS__']
-        translate_file(file_source, file_dest)
-        print(file_dest, 'translated.')
-        print(ppt.CORPUS)
+    # Set the translated corpus (dictionnary)
+    cont = deepL.get_translated_corpus()
+    ppt.TRANSLATION = cont
 
-
-    if True:
-        ppt.CORPUS = ['__CORPUS__']
-        ppt.translate_file(file_source)
-        
-        ppt.DEEPL = seleniumDeepL(driver_path='../chromedriver', loglevel='info')
-        # ppt.DEEPL.load_traductions('traductions_tailnet.json')
-        try:
-            ppt.DEEPL.run_traduction(corpus=ppt.CORPUS, quit_web=False, time=12, batch_value=50, destination_language='de')
-            ppt.DEEPL.close_driver()
-            ppt.DEEPL.save_traductions('traductions_tailnet_de.json')
-        except:
-            ppt.DEEPL.close_driver()
-            ppt.DEEPL.save_traductions('traductions_tailnet_de.json')
-            raise
-
-
-        # print(DEEPL.traductions)
-
-        ppt.CORPUS = None
-        ppt.translate_file(file_source, file_dest)
-        print(file_dest, 'translated.')
+    # Make Power Point Translation
+    ppt.browse_file(file_source, file_dest, text_modif=tm.TRANSLATE, open_file=True)
 
 
 
