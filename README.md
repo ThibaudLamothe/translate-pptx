@@ -18,3 +18,8 @@
 
 ## 3. PPT Insertion
 - Replacing text without modifying its look
+
+
+# Resources
+
+https://github.com/scanny/python-pptx/issues/285
