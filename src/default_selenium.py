@@ -26,7 +26,7 @@ class seleniumDefault:
     def add_url(url):
         self.url = url    
 
-    def load_url(self, sleep=1):
+    def load_url(self, sleep=3):
         self.driver.get(self.url)
         self.original_window =  self.driver.window_handles[0]
         self.sleep(sleep, 'Load url : {}'.format(self.url))
