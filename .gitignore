@@ -2,3 +2,5 @@
 *.pyc
 *.pptx
 chromedriver
+
+*.json

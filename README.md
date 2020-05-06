@@ -22,4 +22,6 @@
 
 # Resources
 
+https://python-pptx.readthedocs.io/en/latest/
 https://github.com/scanny/python-pptx/issues/285
+https://stackoverflow.com/questions/1977362/how-to-create-module-wide-variables-in-python
