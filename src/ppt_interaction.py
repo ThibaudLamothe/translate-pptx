@@ -87,7 +87,7 @@ def replace_paragraph_text_retaining_initial_formatting(paragraph, new_text):
     paragraph.runs[0].text = new_text
 
 
-def change_table_text(shape):
+def change_table_text(table):
     """ Operate text modifications to a shape which contains/is a table.
 
     PARAMETERS:   
@@ -97,20 +97,18 @@ def change_table_text(shape):
     """
 
     # Get table information
-    table = shape.table
+    # table = shape.table
     nb_rows = len(table.rows)
     nb_col = len(table.columns)
 
     # And update each cell
     for col in range(nb_col):
         for row in range(nb_rows):
-            old_text = table.cell(row, col).text
-            new_text = make_text_modification(old_text)
-            table.cell(row, col).text = new_text
-    return shape
+            change_text_frame_text(table.cell(row, col).text_frame)
+    return table
 
 
-def change_text_frame_text(shape):
+def change_text_frame_text(text_frame):
     """
     Operate text modifications to a shape which contains/is a text_frame.
 
@@ -120,7 +118,6 @@ def change_text_frame_text(shape):
         - pptx.shapes.shapetree.SlideShapes - modified values according to config.MODIF setting.
     """
     # For each paragraph of the shape's text_frame
-    text_frame = shape.text_frame
     for idx in range(len(text_frame.paragraphs)):
         
         # Prepare new text
@@ -134,7 +131,8 @@ def change_text_frame_text(shape):
         else:
             text_frame.paragraphs[idx].text = new_text
 
-    return shape
+    # text_frame.word_wrap = True # Either set to True or don't specify it. To False, it has a strange behavior.
+    return text_frame
 
 
 def browse_shape(shape):
@@ -150,12 +148,12 @@ def browse_shape(shape):
     
     # Text into text shape (basic case)
     if shape.has_text_frame:
-        return change_text_frame_text(shape)
+        return change_text_frame_text(shape.text_frame)
 
     # Text into tables (modification by cell)
     if shape.has_table:
         logger.info(' - TABLE in ppt.')
-        return change_table_text(shape)
+        return change_table_text(shape.table)
 
     # Grouped shapes (using recursivity)
     if shape.shape_type==6:
