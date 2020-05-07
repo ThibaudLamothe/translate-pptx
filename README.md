@@ -34,8 +34,7 @@ CSS Selectors : https://saucelabs.com/resources/articles/selenium-tips-css-selec
 
 
 # TODO
-Keep the format into tables
-
+Deal with batch_value : delete or new argument ? 
 What to do with bigger texts ? 
 Write Readme
 Write article

@@ -125,14 +125,12 @@ class seleniumDeepL(seleniumDefault):
         """ Given a corpus of sentences, aggregate them by batch in order to make less request on DeepL website.
         PARAMETERS:
             - corpus : list of str - 
-            - batch_value : int - 
+            # - batch_value : int - 
             - joiner : str - 
             - max_caracter : int - 
 
         OUTPUT : list of dict - batches of sentences with batch descriptions (text as str/ size as int/ joiner as str / original_batch as list of str)
         """
-
-        
         
         batch = []
         batch_corpus = []
@@ -141,7 +139,6 @@ class seleniumDeepL(seleniumDefault):
         
         nb_sentence = len(corpus)
         nb_iteration = int(nb_sentence/batch_value)
-        logger.warn('Initial corpus is composed of {} sentences'.format(nb_sentence))
         
         erase_last_sentence = False
 
@@ -176,18 +173,22 @@ class seleniumDeepL(seleniumDefault):
             #     # if not last_sentence: continue
             #     continue
 
+            joined_batch = joiner.join(batch)
+            joined_batch_size = len(joined_batch)
+            logger.info("Batch has size : {}".format(joined_batch_size))
+            assert joined_batch_size < max_caracter, "Batch size size is too long for DeepL : {}".format(max_caracter)
+
+            if joined_batch_size == 0:
+                continue
 
             # Save batch in the corpus
-            joined_batch = joiner.join(batch)
             batch_corpus.append({
                 'text':joined_batch,
                 'size':len(batch),
                 'joiner':joiner,
                 'original_batch':batch
             })
-            logger.info("Batch has size : {}".format(len(joined_batch)))
-            assert len(joined_batch) < max_caracter, "Batch size size is too long for DeepL : {}".format(max_caracter)
-
+            
             batch = []
             batch_length = 0
             batch_iteration=0
@@ -246,7 +247,7 @@ class seleniumDeepL(seleniumDefault):
             - destination_language :
             - joiner : 
             - quit_web :
-            - batch_value :
+            # - batch_value :
             - time_to_translate :
             - time_batch_rest : time to wait at the end of an iteration before starting a new one.
             - load_at:
@@ -268,6 +269,8 @@ class seleniumDeepL(seleniumDefault):
         
         # Prepare batched corpus
         corpus_batch = self.prepare_batch_corpus(corpus, batch_value, joiner)
+        logger.warn('Initial corpus is composed of {} sentences'.format(len(corpus)))
+        logger.warn('Formated corpus is composed of {} batches'.format(len(corpus_batch)))
         
         # Check data to translate
         if len(corpus_batch)==0:
