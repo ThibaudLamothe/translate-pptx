@@ -24,7 +24,7 @@ if __name__ == "__main__":
     deepL = seleniumDeepL(driver_path='../chromedriver', loglevel='info')
 
     # (Load,) Run (& Store) Translations
-    deepL.run_translation(corpus=ppt.CORPUS, batch_value=50, time_to_translate=20, destination_language='en', load_and_store_at=translation_path, quit_web=False, raise_error=True)
+    deepL.run_translation(corpus=ppt.CORPUS, time_to_translate=20, destination_language='en', load_and_store_at=translation_path, quit_web=False, raise_error=True)
 
     # Close connection
     deepL.close_driver()

@@ -121,30 +121,40 @@ class seleniumDeepL(seleniumDefault):
             self.translations[original]=translation
 
 
-    def prepare_batch_corpus(self, corpus, batch_value, joiner, max_caracter=5000):
+    def prepare_batch_corpus(self, corpus, joiner, max_caracter=4900):
         """ Given a corpus of sentences, aggregate them by batch in order to make less request on DeepL website.
         PARAMETERS:
             - corpus : list of str - 
-            # - batch_value : int - 
             - joiner : str - 
             - max_caracter : int - 
 
         OUTPUT : list of dict - batches of sentences with batch descriptions (text as str/ size as int/ joiner as str / original_batch as list of str)
         """
         
+        # Size information
+        nb_sentence = len(corpus)
+        nb_iteration = int(nb_sentence/batch_value)
+
+        # Batch information (reset these values after each batch finalization)
         batch = []
         batch_corpus = []
         batch_length = 0
-        batch_iteration = 0
-        
-        nb_sentence = len(corpus)
-        nb_iteration = int(nb_sentence/batch_value)
-        
+                
+        # Flag used in case of a last sentence which is already translated
         erase_last_sentence = False
 
+        # Going throug each sentence of the initial corpus to create the batches
         for idx, sentence in enumerate(corpus):
             last_sentence = idx + 1 == nb_sentence
-            
+
+            # Check sentence size
+            if len(sentence)> max_caracter:
+                logger.error('SENTENCE IS TOO LONG. Can not go through translation process. Use shorter text.')
+                logger.error('Max authorized size is {}'.format(max_caracter))
+                logger.error(sentence)
+                # TODO : split too big sentences on '\n', translate separated parts and reconciliate them.
+                raise
+
             # Don't add to batch if sentence already traducted
             if sentence in self.translations.keys():
                 self.print_translation(sentence, self.translations[sentence])
@@ -156,28 +166,21 @@ class seleniumDeepL(seleniumDefault):
                 if not last_sentence: continue
                 erase_last_sentence = True
 
-
-            # NUMBER OF CARACTER BATCH :
+            # Checking the batch size before adding a new sentence in it
             hypothetical_length = batch_length + len(sentence)
-            if hypothetical_length < 4900:
+            if hypothetical_length < max_caracter:
                 if not erase_last_sentence:
                     batch.append(sentence)
                     batch_length += len(sentence) + len(joiner)
                 if not last_sentence: continue
             
-            
-            # NUMBER OF SENTENCE BATCH : If batch is full, batch is added
-            # batch.append(sentence)
-            # if (batch_iteration < batch_value) and not last_sentence: #(idx + 1 < nb_sentence):
-            #     batch_iteration += 1
-            #     # if not last_sentence: continue
-            #     continue
-
+            # Finalizing batch beforee storing
             joined_batch = joiner.join(batch)
             joined_batch_size = len(joined_batch)
             logger.info("Batch has size : {}".format(joined_batch_size))
             assert joined_batch_size < max_caracter, "Batch size size is too long for DeepL : {}".format(max_caracter)
 
+            # Do not add an empty batch
             if joined_batch_size == 0:
                 continue
 
@@ -191,11 +194,7 @@ class seleniumDeepL(seleniumDefault):
             
             batch = []
             batch_length = 0
-            batch_iteration=0
-            erase_last_sentence = False
-           
-            
-            
+                       
         return batch_corpus
 
 
@@ -237,7 +236,7 @@ class seleniumDeepL(seleniumDefault):
 
 
     def run_translation(
-        self, corpus='Hello, World!', destination_language='en', joiner='\n____\n', quit_web=True, batch_value=10,
+        self, corpus='Hello, World!', destination_language='en', joiner='\n____\n', quit_web=True, 
         time_to_translate=10, time_batch_rest=2, raise_error=False,
         load_at=None, store_at=None ,load_and_store_at=None):
         """ THE FUNCTION. This is the one which is called by final user and sets (almost) all the other things.
@@ -247,7 +246,6 @@ class seleniumDeepL(seleniumDefault):
             - destination_language :
             - joiner : 
             - quit_web :
-            # - batch_value :
             - time_to_translate :
             - time_batch_rest : time to wait at the end of an iteration before starting a new one.
             - load_at:
@@ -268,7 +266,7 @@ class seleniumDeepL(seleniumDefault):
             self.load_translations(file_path=load_at)
         
         # Prepare batched corpus
-        corpus_batch = self.prepare_batch_corpus(corpus, batch_value, joiner)
+        corpus_batch = self.prepare_batch_corpus(corpus, joiner)
         logger.warn('Initial corpus is composed of {} sentences'.format(len(corpus)))
         logger.warn('Formated corpus is composed of {} batches'.format(len(corpus_batch)))
         
