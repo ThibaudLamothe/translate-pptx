@@ -13,6 +13,10 @@ config.TRANSLATION  = {}        # Used to replace full sentences   (looking for 
 
 
 class TextModification(IntEnum):
+    """ Decide which action to execut to the PowerPoint file
+        Used in Global context to adress the "make_test_modification" function.
+        Value can be communicated through 
+    """
     NO_MODIFICATION = 0
     EMPTY           = 1
     UPPER           = 2
@@ -61,7 +65,7 @@ def make_text_modification(text, modif=None):
                 text.replace(original_str, replace_str)
         return text
 
-    logger.debug('No transformation on : {}'.format(text))
+    # logger.debug('No transformation on : {}'.format(text))
     return text
 
 
@@ -91,7 +95,6 @@ def change_table_text(shape):
     RETURNS:
         - pptx.shapes.shapetree.SlideShapes - modified values according to config.MODIF setting.
     """
-    logger.warning('TABLE')
 
     # Get table information
     table = shape.table
@@ -151,11 +154,12 @@ def browse_shape(shape):
 
     # Text into tables (modification by cell)
     if shape.has_table:
+        logger.info(' - TABLE in ppt.')
         return change_table_text(shape)
 
     # Grouped shapes (using recursivity)
     if shape.shape_type==6:
-        logger.warning('GROUPED')
+        logger.info(' - GROUPED shapes in ppt.')
         return browse_slide(shape)
 
     # If other cases specify it. Should not happen.
@@ -185,16 +189,17 @@ def browse_file(input_file, output_file=None, text_modif=0, open_file=False):
     PARAMETERS : 
         - inpute_file : str - path of the fle to browse
         - output_file : str - path to save modified PowerPoint. (Default is None : file is not saved.)
-        - text_modif : integer specifying the transformation to apply. See TextModification class for more.
+        - text_modif : integer specifying the transformation to apply. See TextModification class for more. Default is (0) "do nothing".
         - open_file : boolean - if output_file is set, this will dirrectly open the PowerPoint file after browsing ad saving.
     """
 
     # Browsing file
     config.MODIF = text_modif
-    logger.error(config.MODIF)
+    logger.warn(config.MODIF)
+
     prs = Presentation(input_file)
     for slide_number, slide in enumerate(prs.slides):  
-        logger.info('> NEW Slide : {}'.format(slide_number + 1))
+        logger.info('NEW Slide : {}'.format(slide_number + 1))
         slide = browse_slide(slide)
 
     # Displaying information to user
