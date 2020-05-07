@@ -16,8 +16,8 @@ class seleniumDefault:
            (Development realized on macOS Catalina + Chrome)
         
         PARAMETERS:
-        - driver_path : str - path to the selenium driver (mandatory)
-        - loglevel    : str - [debug/info/warning/error] (default is error). Adapt the level of information displayed in terminal.
+            - driver_path : str - path to the selenium driver (mandatory)
+            - loglevel    : str - [debug/info/warning/error] (default is error). Adapt the level of information displayed in terminal.
         """
         
         self.url = None

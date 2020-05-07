@@ -16,13 +16,19 @@ from logzero import logger
 
     
 class seleniumDeepL(seleniumDefault):
-    """ This class
+    """ Using Selenium to translate corpus of texts through https://www.deepl.com/fr/translator
     """
 
     def __init__(self, destination_language='en', **kwargs):
+        """ In addition de seleniumDefault object, we can select the translation language when creating a seleniumDeepL.
+        PARAMETERS:
+            - driver_path          : str - path to the selenium driver (mandatory)
+            - loglevel             : str - [debug/info/warning/error] (default is error). Adapt the level of information displayed in terminal.
+            - destination_language : str - [fr/en/de/es/pt/it/nl/pl/ru/ja/zh] (default is 'en' for english).
         """
-        """
+
         super(seleniumDeepL, self).__init__(**kwargs)
+        
         self.sleep(2, 'Opening DeepL app.')
 
         self.translations = {}
@@ -34,32 +40,37 @@ class seleniumDeepL(seleniumDefault):
         self.set_url()
         self.load_url()
 
-        self.languages = ['fr', 'en', 'de', 'es', 'pt', 'it', 'nl', 'pl', 'ru', 'ja', 'zh']
+        self.available_languages = ['fr', 'en', 'de', 'es', 'pt', 'it', 'nl', 'pl', 'ru', 'ja', 'zh']
+
 
     def set_url(self):
         """ Transforms the self.default_url into self.url depending on selected self.destination_language
             NB : The self.url is the one sent to the selenium driver.
         """
+
         self.url = self.default_url.replace('<lang>', self.destination_language)
 
 
     def add_source_text(self, sentence):
         """Place the text to be traducted into the textbox on www.deepl.com
+        
         PARAMETER:
             - sentence : str - text to be translated
         """
+
         clipboard.copy(sentence)
         input_css = 'div.lmt__inner_textarea_container textarea'
         input_area = self.driver.find_element_by_css_selector(input_css)
         
         input_area.clear() # self.sleep(1)
-        input_area.send_keys(Keys.SHIFT, Keys.INSERT)
+        self.paste_clipboard(input_area)
      
   
     def get_translation_copy_button(self):
         """When text is translated, we get it back by clicking on the "Copy to clipboard" button.
            This function gets that button.
         """
+
         button_css = ' div.lmt__target_toolbar__copy button' 
         button = self.driver.find_element_by_css_selector(button_css)
         # attribute "_dl-attr should be onClick: $0.doCopy"
@@ -89,18 +100,17 @@ class seleniumDeepL(seleniumDefault):
 
     def load_translations(self, file_path):
         """ Loads pre-existing translations not to do them multiple times.
-        PARAMETERS:
+        PARAMETER:
             - file_path : str  - source path of the translation json.
         NB : if file does not exist, continue wihtout data.
         NB : append translations. Possibility to load multiple files.
         """
+
         # Checking translation existence
         if not os.path.exists(file_path):
             logger.error('Specified path does not exist. Traduction not loaded.')
-            logger.error('> {}'.format(file_path))
+            logger.error('{}'.format(file_path))
             return
-
-        logger.debug('ici')
 
         # If exists loading it
         with open(file_path) as jfile:
@@ -111,68 +121,100 @@ class seleniumDeepL(seleniumDefault):
             self.translations[original]=translation
 
 
-    def prepare_batch_corpus(self, corpus, batch_value, joiner):
+    def prepare_batch_corpus(self, corpus, batch_value, joiner, max_caracter=5000):
         """ Given a corpus of sentences, aggregate them by batch in order to make less request on DeepL website.
+        PARAMETERS:
+            - corpus : list of str - 
+            - batch_value : int - 
+            - joiner : str - 
+            - max_caracter : int - 
+
+        OUTPUT : list of dict - batches of sentences with batch descriptions (text as str/ size as int/ joiner as str / original_batch as list of str)
         """
+
+        
         
         batch = []
         batch_corpus = []
+        batch_length = 0
         batch_iteration = 0
         
         nb_sentence = len(corpus)
         nb_iteration = int(nb_sentence/batch_value)
-    
+        logger.warn('Initial corpus is composed of {} sentences'.format(nb_sentence))
+        
+        erase_last_sentence = False
+
         for idx, sentence in enumerate(corpus):
             last_sentence = idx + 1 == nb_sentence
             
             # Don't add to batch if sentence already traducted
             if sentence in self.translations.keys():
-                logger.debug('!!! Sentence already traducted.')
                 self.print_translation(sentence, self.translations[sentence])
-                # if not last_sentence: continue
-                continue
-
+                if not last_sentence: continue
+                erase_last_sentence = True
 
             # Don't add to batch if sentence already in batch
             if sentence in batch:
-                # if not last_sentence: continue
-                continue
+                if not last_sentence: continue
+                erase_last_sentence = True
 
 
-            batch.append(sentence)
+            # NUMBER OF CARACTER BATCH :
+            hypothetical_length = batch_length + len(sentence)
+            if hypothetical_length < 4900:
+                if not erase_last_sentence:
+                    batch.append(sentence)
+                    batch_length += len(sentence) + len(joiner)
+                if not last_sentence: continue
+            
+            
+            # NUMBER OF SENTENCE BATCH : If batch is full, batch is added
+            # batch.append(sentence)
+            # if (batch_iteration < batch_value) and not last_sentence: #(idx + 1 < nb_sentence):
+            #     batch_iteration += 1
+            #     # if not last_sentence: continue
+            #     continue
 
-            # If batch is full, batch is added
-            if (batch_iteration < batch_value) and not last_sentence: #(idx + 1 < nb_sentence):
-                batch_iteration += 1
-                # if not last_sentence: continue
-                continue
 
-
+            # Save batch in the corpus
+            joined_batch = joiner.join(batch)
             batch_corpus.append({
-                'text':joiner.join(batch),
+                'text':joined_batch,
                 'size':len(batch),
                 'joiner':joiner,
                 'original_batch':batch
             })
-            
+            logger.info("Batch has size : {}".format(len(joined_batch)))
+            assert len(joined_batch) < max_caracter, "Batch size size is too long for DeepL : {}".format(max_caracter)
+
             batch = []
+            batch_length = 0
             batch_iteration=0
+            erase_last_sentence = False
+           
+            
             
         return batch_corpus
 
 
-    def translation_process(self, corpus_batch, time_between_translation_iteration, time_batch_rest):
+    def translation_process(self, corpus_batch, time_to_translate, time_batch_rest):
         """ The magic operates in here. Add sentences from a corpus batch to the translation corpus of the object.
 
+        PARAMETERS
+            - corpus_batch : list of dict :
+            - time_to_translate : int
+            - time_batch_rest : int
         """
+
         logger.warning('************************ START TRANSLATION PROCESS ************************')
         nb_batch = len(corpus_batch)
         for idx_batch, batch in enumerate(corpus_batch):
 
-            logger.warn('({}/{}) - nb translation iteration.'.format(idx_batch, nb_batch - 1)) 
+            logger.warning('({}/{}) - nb translation iteration.'.format(idx_batch, nb_batch - 1)) 
 
             self.add_source_text(batch['text'])
-            self.sleep(sleep=time_between_translation_iteration, message='Waiting for translation')
+            self.sleep(sleep=time_to_translate, message='Waiting for translation')
         
             full_translation = self.get_translation(sleep_before_click_to_clipboard=3)
             separate = full_translation.split(batch['joiner'])
@@ -195,8 +237,24 @@ class seleniumDeepL(seleniumDefault):
 
     def run_translation(
         self, corpus='Hello, World!', destination_language='en', joiner='\n____\n', quit_web=True, batch_value=10,
-        time_between_translation_iteration=10, time_batch_rest=5,
+        time_to_translate=10, time_batch_rest=2, raise_error=False,
         load_at=None, store_at=None ,load_and_store_at=None):
+        """ THE FUNCTION. This is the one which is called by final user and sets (almost) all the other things.
+        
+        PARAMETERS:
+            - corpus : 
+            - destination_language :
+            - joiner : 
+            - quit_web :
+            - batch_value :
+            - time_to_translate :
+            - time_batch_rest : time to wait at the end of an iteration before starting a new one.
+            - load_at:
+            - store_at : 
+            - load_and_store_at : 
+
+        NO OUTPUT. Results are stored in self.translations, accessible through self.get_translated_corpus()
+        """
 
         # Check corpus format
         if type(corpus)==str:
@@ -224,9 +282,19 @@ class seleniumDeepL(seleniumDefault):
             self.load_url()
 
         # MAKE TRANSLATION ON DEEPL WITH CORPUS BATCHED
-        self.translation_process(corpus_batch, time_between_translation_iteration, time_batch_rest)
+        try:
+            self.translation_process(corpus_batch, time_to_translate, time_batch_rest)
+        
+        # Dealing with error if one occurring during translation process
+        except:
+            store_at = 'translation_error.json' if store_at is None else store_at.replace('.json', '_error.json')
+            self.close_driver()
+            self.print_translation_error(store_at)        
+            if raise_error:
+                self.save_translations(file_path=store_at)
+                raise
 
-        # Eventually load translation
+        # Eventually store translation
         if store_at:
             self.save_translations(file_path=store_at)
         
@@ -234,6 +302,15 @@ class seleniumDeepL(seleniumDefault):
         if quit_web:
             self.close_driver()
 
+
+    def get_translated_corpus(self):
+        """ Returns the dictionnary of alreday traducted sentences
+        
+        OUTPUT:
+            - {'sentence1':'trraduction_1', 'sentence_2':'traducation_2", ...}
+        """
+
+        return self.translations
 
 
     def print_translation(self, origin, translation, nb_car=75):
@@ -244,6 +321,7 @@ class seleniumDeepL(seleniumDefault):
 
         NO OUTPUT. Only printing.
         """
+
         logger.debug('='*nb_car)
         logger.debug('Original text : {}'.format(origin))
         logger.debug('---  '*int(nb_car/5))
@@ -251,32 +329,57 @@ class seleniumDeepL(seleniumDefault):
         logger.debug('='*nb_car)
 
 
-    def get_translated_corpus(self):
-        return self.translations
+    def print_translation_error(self, store_error_at, nb_car=100):
+        """ Display message when error on translation.
+            Inform user on the storage of already translated data.
+        PARAMETERS:
+            - store_error_at : str - sentence in the corpus.
+            - nb_car         : int - define message size
+
+        NO OUTPUT. Only printing.
+        """
+
+        logger.error('')
+        logger.error('/!\\' * int(nb_car/3))
+        logger.error('')
+        logger.error('!' * nb_car)
+        logger.error('!' * nb_car)
+        logger.error('!!!!!!{}TRANSLATION ERROR'.format(' '*35))
+        logger.error('!' * nb_car)
+        logger.error('!!!!! > Translations temporary stored at :')
+        logger.error('*' * nb_car)
+        special_str = '*' * (int((nb_car - len(store_error_at)) / 2) - 2)
+        logger.error('{}  {}  {}'.format(special_str, store_error_at, special_str))
+        logger.error('*' * nb_car)
+        logger.error('!!!!!! > You can input this file through "load_at" parameter for your next translation.')
+        logger.error('!!!!!! > To solve the problem, you should try raise the time for translations.')
+        logger.error('!' * nb_car)
+        logger.error('!' * nb_car)
+        logger.error('')
+        logger.error('/!\\' * int(nb_car/3))
+        logger.error('')
         
 
-
-        
-
-
-# from deepL_selenium import seleniumDeepL ; deepL = seleniumDeepL(driver_path='../chromedriver') ; deepL.run_translation()
 
 if __name__ == "__main__":
     
+    # Defining a French example
     corpus_fr = [
         "Bonjour j'aimerais traduire tous ces documents",
         "Mais je ne suis pas sur d'avoir un niveau d'anglais suffisant",
         "Et surtout ! Je suis Data Scientistt, pas traducteur."
         ]
 
+    # Defining an English example
     corpus_en = [
         "Hi, I'd like to translate all these documents",
         "But I'm not sure I have a sufficient level of English",
-        " And above all! I am Data Scientist, not a translator."
+        "And above all! I am Data Scientist, not a translator."
         ]
 
-
+    # Running en example
+    translation_path = None  # '../translations/example.json'
     deepL = seleniumDeepL(driver_path='../chromedriver', loglevel='debug')
-    deepL.run_translation(corpus=corpus_fr, quit_web=False, destination_language='en', load_and_store_at='../translations/example.json')
+    deepL.run_translation(corpus=corpus_fr, quit_web=False, destination_language='en', load_and_store_at=translation_path, time_to_translate=1)
     deepL.close_driver()
     

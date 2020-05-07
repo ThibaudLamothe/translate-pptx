@@ -27,6 +27,17 @@ https://github.com/scanny/python-pptx/issues/285
 https://stackoverflow.com/questions/1977362/how-to-create-module-wide-variables-in-python
 https://www.selenium.dev/documentation/fr/
 https://selenium-python.readthedocs.io/
+https://www.deepl.com/en/translator
 
 Chromedriver : http://chromedriver.storage.googleapis.com/index.html
 CSS Selectors : https://saucelabs.com/resources/articles/selenium-tips-css-selectors
+
+
+# TODO
+Keep the format into tables
+
+What to do with bigger texts ? 
+Write Readme
+Write article
+
+https://www.anglaisfacile.com/exercices/exercice-anglais-2/exercice-anglais-13344.php
