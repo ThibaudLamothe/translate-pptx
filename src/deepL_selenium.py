@@ -28,7 +28,7 @@ class seleniumDeepL(seleniumDefault):
         """
 
         super(seleniumDeepL, self).__init__(**kwargs)
-        
+
         self.sleep(2, 'Opening DeepL app.')
 
         self.translations = {}
@@ -41,6 +41,9 @@ class seleniumDeepL(seleniumDefault):
         self.load_url()
 
         self.available_languages = ['fr', 'en', 'de', 'es', 'pt', 'it', 'nl', 'pl', 'ru', 'ja', 'zh']
+
+        # options =self.driver.options
+        # options.add_argument('headless')
 
 
     def set_url(self):
@@ -133,8 +136,7 @@ class seleniumDeepL(seleniumDefault):
         
         # Size information
         nb_sentence = len(corpus)
-        nb_iteration = int(nb_sentence/batch_value)
-
+    
         # Batch information (reset these values after each batch finalization)
         batch = []
         batch_corpus = []
@@ -381,6 +383,6 @@ if __name__ == "__main__":
     # Running en example
     translation_path = None  # '../translations/example.json'
     deepL = seleniumDeepL(driver_path='../chromedriver', loglevel='debug')
-    deepL.run_translation(corpus=corpus_fr, quit_web=False, destination_language='en', load_and_store_at=translation_path, time_to_translate=1)
-    deepL.close_driver()
+    # deepL.run_translation(corpus=corpus_fr, quit_web=False, destination_language='en', load_and_store_at=translation_path, time_to_translate=1)
+    # deepL.close_driver()
     

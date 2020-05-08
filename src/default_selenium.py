@@ -135,3 +135,12 @@ class seleniumDefault:
     #     opts = Options()
     #     opts.add_argument(USER_AGENT)
     #     # driver = webdriver.Chrome(path, options=opts)
+
+
+    # def hide_window(self):
+    #     opts = Options()
+    #     # BAD # opts.add_argument('headless')
+    #     # BAD # opts.add_argument('window-size=1200x600')
+    #     self.driver = webdriver.Chrome(self.driver_path, options=opts)
+    #     # GOOD # self.driver.set_window_position(-10000,0) 
+    #     # BAD  # self.driver.set_window_size(0, 0)
