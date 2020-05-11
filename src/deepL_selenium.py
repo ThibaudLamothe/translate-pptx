@@ -269,8 +269,8 @@ class seleniumDeepL(seleniumDefault):
         
         # Prepare batched corpus
         corpus_batch = self.prepare_batch_corpus(corpus, joiner)
-        logger.warn('Initial corpus is composed of {} sentences'.format(len(corpus)))
-        logger.warn('Formated corpus is composed of {} batches'.format(len(corpus_batch)))
+        logger.warning('Initial corpus is composed of {} sentences'.format(len(corpus)))
+        logger.warning('Formated corpus is composed of {} batches'.format(len(corpus_batch)))
         
         # Check data to translate
         if len(corpus_batch)==0:
@@ -383,6 +383,6 @@ if __name__ == "__main__":
     # Running en example
     translation_path = None  # '../translations/example.json'
     deepL = seleniumDeepL(driver_path='../chromedriver', loglevel='debug')
-    # deepL.run_translation(corpus=corpus_fr, quit_web=False, destination_language='en', load_and_store_at=translation_path, time_to_translate=1)
-    # deepL.close_driver()
+    deepL.run_translation(corpus=corpus_fr, quit_web=False, destination_language='en', load_and_store_at=translation_path, time_to_translate=1)
+    deepL.close_driver()
     
