@@ -1,5 +1,7 @@
 # How to translate ppt files ?
 
+[Read my Medium article to discover how the library was built !](https://medium.com/@thibaud.lamothe2/using-selenium-and-deepl-to-automate-the-translation-of-power-point-files-3c01f81f113)
+
 ### Purpose
 
 Free online translators of PowerPoint files have 2 main issues : 
@@ -121,7 +123,6 @@ _NB : the project was developped on MacOS and selenium used with Google Chrome_
 # Resources
 
 
-
 - [Changing the text but keeping the Font in python-pptx](https://github.com/scanny/python-pptx/issues/285)
 - [Module-wide variables in Python (1/2)](how-to-create-module-wide-variables-in-python)
 - [Module-wide variables in Python (2/2)](https://stackoverflow.com/questions/1977362/)
@@ -132,5 +133,3 @@ _NB : the project was developped on MacOS and selenium used with Google Chrome_
 
 # TODO
 - Deal with bigger texts. Idea. Separate long sentences on \n's. Reconciliate them after translation. Do it at the reception and delivey of the corpus, so that no modification are done in the batch_corpus creation ?
-
-https://www.anglaisfacile.com/exercices/exercice-anglais-2/exercice-anglais-13344.php
