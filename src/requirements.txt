@@ -1,4 +1,4 @@
 selenium
-pyhton-pptx
+python-pptx
 clipboard
 logzero
